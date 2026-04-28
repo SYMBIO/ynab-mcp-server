@@ -37,6 +37,5 @@ mcp = FastMCP.from_openapi(
     route_maps=EXCLUDED_ROUTES,
 )
 
-# Create ASGI app with stateless mode for Vercel serverless
-# Path="/" means MCP endpoint is at root, not /mcp/
-app = mcp.http_app(path="/", stateless_http=True)
+# MCP endpoint at /mcp (default), stateless mode for Vercel serverless
+app = mcp.http_app(path="/mcp", stateless_http=True)
