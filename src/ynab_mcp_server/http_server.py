@@ -11,7 +11,7 @@ YNAB_OPENAPI_SPEC_URL = "https://api.ynab.com/papi/open_api_spec.yaml"
 EXCLUDED_ROUTES = [
     RouteMap(
         methods=["GET"],
-        pattern=r"^/budgets/\{budget_id\}/payees$",
+        pattern=r"^/plans/\{plan_id\}/payees$",
         mcp_type=MCPType.EXCLUDE,
     ),
 ]
@@ -26,7 +26,11 @@ openapi_spec = yaml.safe_load(spec_response.text)
 
 client = httpx.AsyncClient(
     base_url=YNAB_API_BASE,
-    headers={"Authorization": f"Bearer {token}"},
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json",
+        "User-Agent": "ynab-mcp-server/1.0",
+    },
     timeout=30.0,
 )
 
@@ -37,5 +41,4 @@ mcp = FastMCP.from_openapi(
     route_maps=EXCLUDED_ROUTES,
 )
 
-# MCP endpoint at /mcp (default), stateless mode for Vercel serverless
 app = mcp.http_app(path="/mcp", stateless_http=True)
