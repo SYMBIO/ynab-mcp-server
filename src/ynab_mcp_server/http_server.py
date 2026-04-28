@@ -36,9 +36,9 @@ def create_http_server():
         client=client,
         name="YNAB MCP Server",
         route_maps=EXCLUDED_ROUTES,
-        stateless_http=True,
-        json_response=True,
     )
 
 mcp = create_http_server()
-app = mcp.get_asgi_app()
+
+# For Vercel, we need to call run() to get the ASGI app
+app = mcp.run(transport="sse", run_async=False, get_app_only=True)
