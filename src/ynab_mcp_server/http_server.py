@@ -16,29 +16,27 @@ EXCLUDED_ROUTES = [
     ),
 ]
 
-def create_http_server():
-    token = os.environ.get("YNAB_API_TOKEN")
-    if not token:
-        raise ValueError("YNAB_API_TOKEN environment variable is required")
-    
-    spec_response = httpx.get(YNAB_OPENAPI_SPEC_URL)
-    spec_response.raise_for_status()
-    openapi_spec = yaml.safe_load(spec_response.text)
-    
-    client = httpx.AsyncClient(
-        base_url=YNAB_API_BASE,
-        headers={"Authorization": f"Bearer {token}"},
-        timeout=30.0,
-    )
-    
-    return FastMCP.from_openapi(
-        openapi_spec=openapi_spec,
-        client=client,
-        name="YNAB MCP Server",
-        route_maps=EXCLUDED_ROUTES,
-    )
+token = os.environ.get("YNAB_API_TOKEN")
+if not token:
+    raise ValueError("YNAB_API_TOKEN environment variable is required")
 
-mcp = create_http_server()
+spec_response = httpx.get(YNAB_OPENAPI_SPEC_URL)
+spec_response.raise_for_status()
+openapi_spec = yaml.safe_load(spec_response.text)
 
-# For Vercel, we need to call run() to get the ASGI app
-app = mcp.run(transport="sse", run_async=False, get_app_only=True)
+client = httpx.AsyncClient(
+    base_url=YNAB_API_BASE,
+    headers={"Authorization": f"Bearer {token}"},
+    timeout=30.0,
+)
+
+mcp = FastMCP.from_openapi(
+    openapi_spec=openapi_spec,
+    client=client,
+    name="YNAB MCP Server",
+    route_maps=EXCLUDED_ROUTES,
+)
+
+# Create ASGI app with stateless mode for Vercel serverless
+# Path="/" means MCP endpoint is at root, not /mcp/
+app = mcp.http_app(path="/", stateless_http=True)
